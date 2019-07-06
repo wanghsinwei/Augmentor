@@ -458,7 +458,7 @@ class Pipeline(object):
         return 1
 
     # TODO: Fix: scaled=True results in an error.
-    def keras_generator(self, batch_size, scaled=True, image_data_format="channels_last"):
+    def keras_generator(self, batch_size, scaled=True, scale_function=None, image_data_format="channels_last"):
         """
         Returns an image generator that will sample from the current pipeline
         indefinitely, as long as it is called.
@@ -542,8 +542,11 @@ class Pipeline(object):
             y = np.asarray(y)
 
             if scaled:
-                X = X.astype('float32')
-                X /= 255.  # PR #126
+                if scale_function is None:
+                    X = X.astype('float32')
+                    X /= 255.  # PR #126
+                else:
+                    X = scale_function(X)
 
             yield (X, y)
 
@@ -808,7 +811,7 @@ class Pipeline(object):
             if image.label_pair is not None:
                 label_count += 1
 
-        if len(label_count) != 0:
+        if label_count != 0:
             label_pairs = sorted(set([x.label_pair for x in self.augmentor_images]))
 
             print("Classes: %s" % len(label_pairs))
